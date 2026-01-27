@@ -1,0 +1,251 @@
+\documentclass[12pt,english, makeidx, a4paper, titlepage,oneside]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{pdfpages}
+\usepackage{titlesec}
+\usepackage{listings} 
+\usepackage{subfig}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage[english]{babel}
+\usepackage{fancyhdr}
+\usepackage{makeidx}
+
+\usepackage[
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    citecolor=black
+]{hyperref}
+
+\geometry{
+    textwidth=16cm,
+    textheight=23cm,
+    top=3cm,
+    bottom=3cm,
+    headheight=15pt
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\rhead{\thepage}
+
+\newcommand{\SubSubSection}[1]{\subsubsection{\bf Exercise ~#1}}
+\newcommand{\homework}[1]{\subsubsection{\bf Homework ~#1}}
+\newcommand{\Solution}{\subsubsection{\bf Solution}}
+
+\linespread{1.1}
+\makeindex
+
+\begin{document}
+
+\begin{titlepage}
+    \begin{flushleft}
+        \includegraphics[width=5cm]{./logopoli.jpeg} \\
+        \vspace{1.5cm}
+        
+        {\large\scshape Operating Systems for Embedded Systems} \\
+        \vspace{0.5cm}
+        \hrule height 1.5pt
+        \vspace{0.8cm}
+        {\fontsize{25}{25}\selectfont\bfseries Deterministic Timeline-Based Scheduler for FreeRTOS\par}
+        \vspace{0.6cm}
+        {\Large Project 1} \\
+        
+        \vspace{1cm}
+        \hrule height 0.5pt
+        
+        \vfill
+        
+        {\Large Authors:}\\[0.5cm]
+        {\large
+        \textbf{Bruno Samuel} -- F641850\\
+        \textbf{Carbone Gaetano} -- 359776\\
+        \textbf{Deplano Lorenzo} -- 361511\\
+        \textbf{Ionita Elsa Francesca} -- 361804\\
+        \textbf{Martello Mattia} -- 361907\\
+        }
+
+    \end{flushleft}
+\end{titlepage}
+
+\newpage   
+\tableofcontents
+\newpage
+
+\begin{abstract}
+\noindent Traditional real-time operating systems, including FreeRTOS, rely on priority-based scheduling to manage task execution.
+While flexible, this approach may introduce non-deterministic behavior due to priority inversions, dynamic task interactions, and runtime variability.
+This project presents the design and implementation of a deterministic, timeline-driven scheduler for FreeRTOS, based on a major frame and sub-frame execution model.
+\\~\\
+Tasks are activated at predefined time slots, ensuring predictable execution, temporal isolation, and repeatability across scheduling cycles.
+The proposed scheduler replaces the default FreeRTOS scheduler and targets embedded systems requiring precise timing guarantees.
+\end{abstract}
+
+\newpage
+
+\section{Introduction}
+Real-time embedded systems often require strong guarantees on task execution timing and system predictability.
+\\~\\
+In safety-critical and time-sensitive domains, such as avionics, automotive systems, and industrial control, deterministic behavior is preferred over dynamic scheduling flexibility.
+\\~\\
+FreeRTOS adopts a priority-based preemptive scheduling model, which is suitable for a wide range of applications but may lead to timing variability.
+This project explores an alternative approach based on a time-triggered architecture, where task execution is driven by a global timeline rather than dynamic priorities.
+\\~\\
+The objective of this work is to design and implement a precise scheduler for FreeRTOS that enforces deterministic execution through a compile-time defined timeline.
+
+\section{System Overview}
+The proposed scheduler operates on a cyclic timeline called a \textit{major frame}, which is divided into smaller time windows known as \textit{sub-frames}.
+Each task is statically assigned to a specific sub-frame and time interval within the major frame.
+\\~\\
+The scheduler repeats the same execution pattern at every major frame, guaranteeing identical behavior across cycles.
+This design eliminates the need for task priorities and runtime scheduling decisions.
+
+\section{Task Model}
+Each task in the system is implemented as a single-shot function.
+Once activated by the scheduler, a task executes from start to completion and then terminates.
+Tasks do not contain internal periodic logic, delays, or self-suspension mechanisms.
+\\~\\
+Inter-task communication is limited to polling-based mechanisms to avoid blocking behavior and preserve deterministic execution.
+
+\section{Task Categories}
+Tasks are classified into two categories:
+
+\subsection{Hard Real-Time Tasks}
+Hard real-time (HRT) tasks are assigned to a specific sub-frame with predefined start and end times.
+Once started, an HRT task executes in a non-preemptive manner.
+If the task exceeds its allocated execution window, it is forcibly terminated by the scheduler.
+
+\subsection{Soft Real-Time Tasks}
+Soft real-time (SRT) tasks execute during the idle time left by HRT tasks.
+They are scheduled in a fixed compile-time order and may be preempted at any time by HRT tasks.
+No completion guarantees are provided for SRT tasks within a major frame.
+
+\section{Scheduling Model}
+
+The first step in the development of the proposed scheduler follows a Test-Driven Development (TDD) approach.  
+Before introducing any modification to the FreeRTOS kernel, it is necessary to clearly understand and experimentally observe how the default FreeRTOS scheduler behaves, and how this behavior differs from the desired timeline-based execution model.
+
+\subsection{Default FreeRTOS Scheduler}
+
+The standard FreeRTOS scheduler is a \emph{priority-based, event-driven scheduler}.\\
+At any instant, the running task is selected as the highest-priority task in the \texttt{READY} state. Task execution is therefore driven by:
+\begin{itemize}
+    \item task priorities,
+    \item task state transitions (READY, BLOCKED, SUSPENDED),
+    \item system tick interrupts.
+\end{itemize}
+
+\noindent Periodic behavior is typically implemented by tasks themselves through calls to \texttt{vTaskDelay()} or related APIs. As a consequence, task release times are not defined with respect to an absolute global timeline, but are instead relative to the moment at which the task blocks itself.
+\\~\\
+\noindent The scheduler has no explicit knowledge of:
+\begin{itemize}
+    \item absolute release times,
+    \item execution windows,
+    \item deadlines,
+    \item frame-level repetition.
+\end{itemize}
+
+\noindent As a result, while FreeRTOS provides good responsiveness and flexibility for event-driven systems, it does not guarantee deterministic execution order or bounded release jitter under CPU load.
+
+\subsection{Timeline-Based Scheduler}
+
+The scheduler developed in this project follows a fundamentally different paradigm.  
+It is a \emph{time-triggered, timeline-based scheduler}, where task execution is driven by a global notion of time rather than by task priorities or events.
+\\~\\
+A \textbf{Major Frame} with fixed duration is defined at compile time and cyclically repeated. Each Major Frame is subdivided into \textbf{Sub-frames}, and tasks are statically assigned to predefined execution windows within the timeline. For each task, the scheduler knows in advance:
+\begin{itemize}
+    \item the exact release time,
+    \item the allowed execution interval,
+    \item the relative ordering with respect to other tasks.
+\end{itemize}
+\\~\\
+In this model, tasks do not implement periodicity or self-scheduling logic. Instead, they are activated exclusively by the scheduler according to the global timeline. This approach enables deterministic execution, bounded jitter, and explicit enforcement of deadlines.
+
+\subsection{Baseline Tests with the Default FreeRTOS Scheduler}
+
+Following the TDD methodology, a set of baseline tests is first executed using the unmodified FreeRTOS scheduler. These tests employ simple dummy tasks and a tracing mechanism to observe actual runtime behavior.
+
+\subsubsection{Test Scenario 1}
+
+\paragraph{Specification}
+Two tasks, A and B, are implemented as periodic tasks using \texttt{vTaskDelay(10 ms)}. Both tasks perform a short computation and then block themselves.
+
+\paragraph{Observed Behavior}
+Although both tasks have identical nominal periods, the actual execution order and release times depend on: task priorities, system load and interference from other READY tasks.
+
+\noindent The resulting execution timeline may vary across runs, and no strict ordering between A and B can be guaranteed.
+
+\subsubsection{Test Scenario 2}
+
+\paragraph{Specification}
+A low-priority task C performs a continuous busy loop without blocking, while two higher-priority periodic tasks A and B rely on \texttt{vTaskDelay} for timing.
+
+\paragraph{Observed Behavior}
+Task C consumes all available CPU time when higher-priority tasks are blocked. The wake-up of tasks A and B may be delayed by up to one tick or more, depending on scheduling decisions and system load. No deadline enforcement is performed by the scheduler.
+
+\subsection{Baseline Tests with the Timeline-Based Scheduler}
+
+The same test scenarios are then reinterpreted under the timeline scheduler.
+
+\subsubsection{Test Scenario 1}
+
+\paragraph{Timeline Configuration}
+A Major Frame of 20 ms is defined, with the following static allocation:
+\begin{itemize}
+    \item Task A: 0--3 ms and 10--13 ms
+    \item Task B: 3--6 ms and 13--16 ms
+\end{itemize}
+
+\paragraph{Expected Behavior}
+The execution order is fixed and identical in every Major Frame. No jitter beyond one tick is allowed, and the timeline is replayed deterministically.
+
+\subsubsection{Test Scenario 2}
+
+\paragraph{Timeline Configuration}
+Tasks A and B are defined as Hard Real-Time tasks with fixed execution windows, while task C is treated as a Soft Real-Time task.
+
+\paragraph{Expected Behavior}
+Task C executes only during idle intervals left by Hard Real-Time tasks. It cannot delay or interfere with the execution of tasks A and B. Any overrun of a Hard Real-Time task beyond its assigned window is detected and handled explicitly by the scheduler.
+
+\subsection{Test-Driven Development}
+
+By first characterizing the behavior of the default FreeRTOS scheduler through controlled tests, the project establishes a clear reference model. Each subsequent development phase introduces specific changes whose effects can be directly observed and validated against this baseline.
+\\~\\
+This methodology ensures that:
+\begin{itemize}
+    \item each design decision is justified by observable behavior,
+    \item regressions are detectable,
+    \item the final scheduler meets its deterministic real-time objectives.
+\end{itemize}
+
+
+\section{Scheduler Architecture}
+A dedicated configuration structure defines all tasks, including their timing parameters, category, and execution order.
+
+At runtime, the scheduler:
+\begin{itemize}
+    \item Parses the configuration data structure
+    \item Initializes the scheduling timeline
+    \item Spawns and terminates tasks according to the current sub-frame
+    \item Resets the system state at the end of each major frame
+\end{itemize}
+
+\section{Conclusion}
+The proposed scheduler provides strong determinism and predictable execution at the cost of reduced flexibility.
+Compared to priority-based scheduling, this approach simplifies timing analysis and eliminates runtime scheduling uncertainty.
+\\~\\
+However, it requires careful offline design of task execution times and may lead to underutilization of CPU resources in some scenarios.
+\\~\\
+This project demonstrates that a timeline-driven, time-triggered scheduler can be successfully integrated into FreeRTOS.
+The resulting system offers deterministic behavior, predictable timing, and clear separation between hard and soft real-time tasks.
+\end{document}
