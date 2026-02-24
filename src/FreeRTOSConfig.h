@@ -41,12 +41,15 @@
 
 #include <trace.h> //Header for custom trace methods
 
+#define configUSE_TIMELINE_SCHEDULER             1
+
 #define configUSE_TRACE_FACILITY                 1
 #define configGENERATE_RUN_TIME_STATS            0
 
 #define configUSE_PREEMPTION                     1
+#define configUSE_TIME_SLICING 					 0 // REQUIRED 0
 #define configUSE_IDLE_HOOK                      0
-#define configUSE_TICK_HOOK                      1
+#define configUSE_TICK_HOOK                      1 //REQUIRED 1
 #define configCPU_CLOCK_HZ                       ( ( unsigned long ) 25000000 )
 #define configTICK_RATE_HZ                       ( ( TickType_t ) 1000 )
 #define configMINIMAL_STACK_SIZE                 ( ( unsigned short ) 80 )
@@ -133,20 +136,28 @@
 
 #define configENABLE_BACKWARD_COMPATIBILITY 0
 
-#define traceTASK_SWITCHED_IN()  custom_trace_task_switched_in()
-#define traceTASK_SWITCHED_OUT() custom_trace_task_switched_out()
-#define traceQUEUE_SEND(pxQueue)  custom_trace_queue_send(pxQueue)
-#define traceQUEUE_RECEIVE(pxQueue) custom_trace_queue_receive(pxQueue)
-#define traceTASK_CREATE(pxNewTCB) custom_trace_task_create(pxNewTCB)
-#define traceTASK_INCREMENT_TICK( xTickCount ) custom_trace_task_increment_tick(xTickCount)
-#define traceTASK_DELETE( pxTaskToDelete ) custom_trace_task_delete(pxTaskToDelete)
-// #define traceTASK_SUSPEND( pxTaskToSuspend ) custom_trace_task_suspend(pxTaskToSuspend)
-// #define traceTASK_DELAY() custom_trace_task_delay()
-// #define traceTASK_DELAY_UNTIL(xTimeToWake) custom_trace_task_delay_until(xTimeToWake)
-// #define traceTASK_PRIORITY_SET( pxTask, uxNewPriority ) custom_trace_priority_set(pxTask, uxNewPriority)
-// #define traceTASK_PRIORITY_INHERIT( pxTask, uxNewPriority ) custom_trace_priority_inherit(pxTask, uxNewPriority)
-// #define traceTASK_RESUME( pxTaskToResume ) custom_trace_task_resume(pxTaskToResume)
-// #define traceTASK_RESUME_FROM_ISR( pxTaskToResume ) custom_trace_task_resume_from_isr(pxTaskToResume)
-// #define traceTASK_NOTIFY_WAIT(uxIndexToWaitOn) custom_trace_task_notify_wait(uxIndexToWaitOn)
+#define traceTASK_SWITCHED_IN()  trace_task_switched_in()
+#define traceTASK_SWITCHED_OUT() trace_task_switched_out()
+#define traceQUEUE_SEND(pxQueue)  trace_queue_send(pxQueue)
+#define traceQUEUE_RECEIVE(pxQueue) trace_queue_receive(pxQueue)
+#define traceTASK_CREATE(pxNewTCB) trace_task_create(pxNewTCB)
+#define traceTASK_INCREMENT_TICK( xTickCount ) trace_task_increment_tick(xTickCount)
+#define traceTASK_DELETE( pxTaskToDelete ) trace_task_delete(pxTaskToDelete)
+
+
+/* CUSTOM TRACE MACROS*/
+#define traceTASK_SRT_READY(pcTaskName) trace_SRT_task_ready(pcTaskName)
+#define traceTASK_SRT_PREEMPTED(pcTaskName) trace_SRT_task_preempted(pcTaskName)
+#define traceTASK_SRT_COMPLETED(pcTaskName) trace_SRT_task_completed(pcTaskName)
+#define traceTASK_SRT_RESUMED(pcTaskName) trace_SRT_task_resumed(pcTaskName)
+#define traceTASK_SRT_RUNNING(pcTaskName) trace_SRT_task_running(pcTaskName)
+
+#define traceTASK_HRT_READY(pcTaskName) trace_HRT_task_ready(pcTaskName)
+#define traceTASK_HRT_DEADLINE_MISS(pcTaskName) trace_HRT_task_aborted(pcTaskName)
+#define traceTASK_HRT_COMPLETED(pcTaskName) trace_HRT_task_completed(pcTaskName)
+#define traceTASK_HRT_RUNNING(pcTaskName) trace_HRT_task_running(pcTaskName)
+#define traceTASK_IDLE() trace_IDLE_task()
+
+
 
 #endif /* FREERTOS_CONFIG_H */

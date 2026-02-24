@@ -22,6 +22,7 @@ This is a **university project**, and contributions are currently limited in sco
 |Gaetano Carbone|359776|
 |Lorenzo Deplano|361511|
 |Elsa Francesca Ionita|361804|
+|Mattia Martello|361907|
 
 ## Project status
 In Development

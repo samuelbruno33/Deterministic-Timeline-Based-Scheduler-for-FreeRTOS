@@ -90,7 +90,6 @@ void test_Scheduler_SortTasks(void) {
 
     SchedulerConfig_t xConfig = { 
         .ulMajorFrameTicks = 100, 
-        .ulSubFrameTicks = 10, 
         .pxTasks = xTasks, 
         .ulNumTasks = 3 
     };

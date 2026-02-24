@@ -4,7 +4,7 @@ Todo list of the tests
 - [x] Phase 0
 - [x] Phase 1
 - [x] Phase 2
-- [ ] Phase 3
+- [x] Phase 3
 - [ ] Phase 4
 - [ ] Phase 5
 
@@ -80,4 +80,31 @@ The expected behavior is the periodic emission of a `TIMEKEEPER MAJOR FRAME RESE
 
 ```
 20, 40, 60, ...
+```
+
+## Phase 3: Hard Real-Time Scheduling
+
+To validate the core modifications made to the FreeRTOS Kernel (`tasks.c`), the file `hrt_test.c` was created. This test ensures that the system can switch from the standard priority-based logic to the deterministic Time-Triggered logic.
+
+The test configures:
+
+* a **Major Frame of 50 FreeRTOS ticks**;
+* two **HRT tasks** placed in specific time windows: `HRT_A` [10, 20) and `HRT_B` [30, 40);
+* explicit **Time Gaps** (0-10, 20-30, 40-50) where no HRT task is scheduled.
+
+The purpose of this test is to confirm that:
+
+* the **Kernel ignores standard priorities** when the Timeline Scheduler is active;
+* the `vTaskSwitchContext` is forced to execute at every tick, ensuring precision even when the system is Idle;
+* **HRT Tasks** are selected for execution exactly at their `Start Tick` and descheduled at their `End Tick`;
+* the CPU correctly transitions to the **Idle state** during timeline gaps.
+
+The expected behavior is a deterministic repeating pattern in the trace, where tasks execute only in their assigned slots:
+```
+[0] TASK SWITCH IN - Task: 'IDLE' 
+[10] HRT SELECTED - Task: 'HRT_A' 
+[20] CPU IDLE (Timeline Gap) 
+[30] HRT SELECTED - Task: 'HRT_B' 
+[40] CPU IDLE (Timeline Gap) 
+[50] TIMEKEEPER MAJOR FRAME RESET
 ```

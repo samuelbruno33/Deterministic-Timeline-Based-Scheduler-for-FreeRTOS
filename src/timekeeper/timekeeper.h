@@ -17,7 +17,10 @@ typedef struct {
 
 void vTimekeeperInit(const TimekeeperConfig_t *cfg);
 void vTimekeeperUpdate(void);
-bool vTKSMajorFrameRestart(void);
+bool vTimekeeperMajorFrameRestart(void);
+uint32_t vTimekeeperGetCurrentSubframe(void);
+uint32_t vTimekeeperGetCurrentTickInMF(void);
+
 
 #endif
 

@@ -115,20 +115,22 @@ SOURCE_FILES += $(KERNEL_DIR)/queue.c
 SOURCE_FILES += $(SOURCE_ROOT)/trace/emulated_uart.c
 SOURCE_FILES += $(SOURCE_ROOT)/trace/trace.c
 
-# Data Structures files (comment this line when executing data structure demo test)
-#SOURCE_FILES += $(SOURCE_ROOT)/data_structure/timeline_scheduler.c
-
-# Demo files and Unity Framework for Unit Testing files
-#SOURCE_FILES += $(DEMO_PROJECT)/test_trace_main.c
-SOURCE_FILES += $(DEMO_PROJECT)/test_data_structure.c
+# Data Structures files (comment this line when executing data structure demo test, since we need the declaration of the c files in the test file)
+SOURCE_FILES += $(SOURCE_ROOT)/data_structure/timeline_scheduler.c
 
 # Scheduler files
 SOURCE_FILES += $(SOURCE_ROOT)/timekeeper/timekeeper.c
 SOURCE_FILES += $(SOURCE_ROOT)/timekeeper/timekeeper_tunnel.c
 
-# Demo files
+# Test files
 # SOURCE_FILES += $(DEMO_PROJECT)/test_trace_main.c
-SOURCE_FILES += $(DEMO_PROJECT)/timekeeper_test.c
+# SOURCE_FILES += $(DEMO_PROJECT)/test_data_structure.c
+# SOURCE_FILES += $(DEMO_PROJECT)/timekeeper_test.c
+# SOURCE_FILES += $(DEMO_PROJECT)/hrt_test.c
+# SOURCE_FILES += $(DEMO_PROJECT)/test_suite.c
+# SOURCE_FILES += $(DEMO_PROJECT)/test_kill_policies.c
+SOURCE_FILES += $(DEMO_PROJECT)/srt_test.c
+# SOURCE_FILES += $(DEMO_PROJECT)/test_suite.c
 
 # Startup code
 SOURCE_FILES += $(BOARD_ROOT)/startup.c

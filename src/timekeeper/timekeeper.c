@@ -41,6 +41,16 @@ void vTimekeeperUpdate(void){
 }
 
 // getter function
-bool vTKSMajorFrameRestart(void){
+bool vTimekeeperMajorFrameRestart(void){
     return tk_state.major_frame_restart;
+}
+
+uint32_t vTimekeeperGetCurrentSubframe(void){
+    volatile uint32_t tmp = tk_state.current_subframe;
+    return tmp;
+}
+
+uint32_t vTimekeeperGetCurrentTickInMF(void){
+    volatile uint32_t tmp = tk_state.mf_tick;
+    return tmp;
 }

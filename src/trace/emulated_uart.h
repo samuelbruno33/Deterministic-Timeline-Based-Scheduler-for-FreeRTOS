@@ -12,5 +12,4 @@
 void UART_init(void);
 void UART_printf(const char *s);
 
-
 #endif //EMULATED_UART_H
